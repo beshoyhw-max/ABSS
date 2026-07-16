@@ -1,8 +1,81 @@
 window.addEventListener('pywebviewready', () => {
-    document.getElementById('meeting-date').textContent = 'Meeting — ' + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('meeting-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     setInterval(updateTime, 1000);
     setInterval(pollAbsences, 500);
+    setupResizeHandler();
+    setupDragHandler();
 });
+
+function setupResizeHandler() {
+    const handle = document.getElementById('resize-handle');
+    if (!handle) return;
+
+    let isResizing = false;
+    let startWidth = 0;
+    let startHeight = 0;
+    let startX = 0;
+    let startY = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startWidth = window.innerWidth;
+        startHeight = window.innerHeight;
+        startX = e.screenX;
+        startY = e.screenY;
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const deltaX = e.screenX - startX;
+        const deltaY = e.screenY - startY;
+        const newWidth = Math.max(200, startWidth + deltaX);
+        const newHeight = Math.max(150, startHeight + deltaY);
+
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.resize_display) {
+            window.pywebview.api.resize_display(newWidth, newHeight);
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        isResizing = false;
+    });
+}
+
+function setupDragHandler() {
+    const dragBar = document.getElementById('drag-bar');
+    if (!dragBar) return;
+
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    dragBar.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastX = e.screenX;
+        lastY = e.screenY;
+        document.body.style.cursor = 'move';
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.screenX - lastX;
+        const dy = e.screenY - lastY;
+        lastX = e.screenX;
+        lastY = e.screenY;
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.move_window) {
+            window.pywebview.api.move_window(dx, dy).catch(() => { });
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        document.body.style.cursor = '';
+    });
+}
 
 function updateTime() {
     document.getElementById('current-time').textContent = new Date().toLocaleTimeString();
