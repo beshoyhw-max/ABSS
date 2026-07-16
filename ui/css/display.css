@@ -12,11 +12,11 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
     -webkit-app-region: no-drag;
 }
 
-.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #222; }
-.header h1 { font-size: 1.8rem; font-weight: 300; }
-#current-time { font-size: 1.8rem; font-weight: 300; color: #888; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-bottom: 1px solid #222; flex-wrap: wrap; gap: 10px; }
+.header h1 { font-size: 1.25rem; font-weight: 400; color: #fff; letter-spacing: -0.3px; }
+#current-time { font-size: 1.25rem; font-weight: 400; color: #888; }
 
-.absences-list { flex: 1; display: flex; flex-direction: column; padding: 20px 40px 40px 40px; gap: 16px; overflow-y: auto; justify-content: flex-start; }
+.absences-list { flex: 1; display: flex; flex-direction: column; padding: 16px 24px 24px 24px; gap: 12px; overflow-y: auto; justify-content: flex-start; }
 /* Scrollbar Styling for Display list */
 .absences-list::-webkit-scrollbar {
     width: 8px;
@@ -35,14 +35,14 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
 
 .all-present { font-size: 2rem; color: var(--accent); text-align: center; margin-top: auto; margin-bottom: auto; }
 
-.absence-item { display: flex; align-items: center; gap: 16px; padding: 16px 24px; background: #111; border-radius: 12px; animation: fadeIn 0.3s ease; }
+.absence-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #11121d; border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; animation: fadeIn 0.3s ease; flex-wrap: wrap; }
 .absence-item.returning { animation: fadeOut 0.5s ease forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; } }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
-.bullet { color: var(--highlight); font-size: 1.5rem; }
-.absence-item .name { font-size: 2rem; font-weight: 600; }
-.absence-item .duration { color: #888; font-size: 1.5rem; }
+.bullet { color: var(--highlight); font-size: 1.1rem; }
+.absence-item .name { font-size: 1.3rem; font-weight: 600; color: #fff; }
+.absence-item .duration { color: #888; font-size: 1.1rem; }
 
 /* Resize handle styling */
 #resize-handle {
