@@ -1,104 +1,98 @@
-:root {
-    --bg: transparent;
-    --bg-card: rgba(10, 10, 18, 0.4);
-    --text: #f5f5f5;
-    --highlight: #e94560;
-    --accent: #2ecc71;
-}
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
     font-family: 'Segoe UI', sans-serif;
-    background: transparent;
-    color: var(--text);
+    background: transparent !important;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+    width: 100vw;
     overflow: hidden;
+    position: relative;
+    transition: background 0.2s ease, border 0.2s ease;
+    border: 1px solid transparent;
 }
 
-/* Ensure non-draggable regions still work inside pywebview-drag-region */
+/* HOVER MODE: Shows exactly where the window is so you can interact with it */
+body:hover {
+    background: rgba(0, 0, 0, 0.05) !important; /* Very faint dark tint */
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+}
+
 .no-drag {
     -webkit-app-region: no-drag;
 }
 
-#floating-bar {
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-card);
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.06) inset;
+/* Top-Left Drag Handle */
+#drag-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-bottom-right-radius: 8px;
+    cursor: move;
+    user-select: none;
+    z-index: 100;
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.2s ease;
 }
 
-#drag-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 12px;
-    cursor: grab;
-    background: rgba(10, 10, 18, 0.6);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-#drag-hint {
-    color: rgba(255,255,255,0.3);
-    font-size: 0.9rem;
-    cursor: grab;
-    flex-shrink: 0;
-}
-
-#meeting-date {
-    font-size: 0.8rem;
-    font-weight: 400;
-    color: rgba(255,255,255,0.7);
-    flex: 1;
-}
-
-#current-time {
-    font-size: 0.8rem;
-    font-weight: 400;
-    color: rgba(255,255,255,0.5);
-    flex-shrink: 0;
-}
-
-.absences-list { flex: 1; display: flex; flex-direction: column; padding: 8px 12px 12px 12px; gap: 6px; overflow-y: auto; justify-content: flex-start; max-height: 200px; }
-/* Scrollbar Styling for Display list */
-.absences-list::-webkit-scrollbar {
-    width: 8px;
-}
-.absences-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-}
-.absences-list::-webkit-scrollbar-thumb {
-    background: var(--highlight);
-    border-radius: 4px;
-}
-.absences-list::-webkit-scrollbar-thumb:hover {
-    background: #ff5773;
-}
-
-.all-present { font-size: 1rem; color: rgba(255,255,255,0.5); text-align: center; margin-top: auto; margin-bottom: auto; }
-
-.absence-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; animation: fadeIn 0.3s ease; flex-wrap: wrap; }
-.absence-item.returning { animation: fadeOut 0.5s ease forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-
-.bullet { color: var(--highlight); font-size: 1.1rem; }
-.absence-item .name { font-size: 1.3rem; font-weight: 600; color: #fff; }
-.absence-item .duration { color: #888; font-size: 1.1rem; }
-
-/* Resize handle styling */
+/* Bottom-Right Resize Handle */
 #resize-handle {
     position: absolute;
     bottom: 0;
     right: 0;
     width: 20px;
     height: 20px;
-    background: linear-gradient(135deg, transparent 50%, var(--highlight) 50%);
-    cursor: nwse-resize;
-    z-index: 9999;
-    -webkit-app-region: no-drag;
+    background: rgba(0, 0, 0, 0.6);
+    cursor: se-resize;
+    z-index: 100;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%); /* Makes it a triangle */
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.2s ease;
+}
+
+/* Reveal handles when hovering over the window */
+body:hover #drag-handle,
+body:hover #resize-handle {
+    opacity: 1;
+}
+
+#bulletin-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.bulletin {
+    position: absolute;
+    top: 50%;
+    white-space: nowrap;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: white;
+    
+    /* Increased to 6 seconds for a smoother, slower float */
+    animation: floatLeft 10s linear forwards;
+}
+
+@keyframes floatLeft {
+    0% { 
+        left: 100%; /* Start exactly at the right edge */
+        transform: translate(0, -50%);
+        opacity: 0; /* Start invisible */
+    }
+    5% {
+        opacity: 1; /* Fade in quickly as it enters */
+    }
+    90% {
+        opacity: 1; /* Stay solid until it gets near the left edge */
+    }
+    100% { 
+        left: 0; /* Go to the left edge */
+        transform: translate(-100%, -50%); /* Pull itself completely off-screen */
+        opacity: 0; /* Fade out completely as it exits */
+    }
 }

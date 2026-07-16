@@ -7,18 +7,11 @@
     <link rel="stylesheet" href="css/display.css">
 </head>
 <body class="pywebview-drag-region">
-    <div id="floating-bar">
-        <div id="drag-bar">
-            <span id="drag-hint">⋮⋮</span>
-            <span id="meeting-date"></span>
-            <span id="current-time"></span>
-        </div>
-        <div class="absences-list no-drag" id="absences-list">
-            <p class="all-present">✓ Everyone is present</p>
-        </div>
-    </div>
-    <!-- Custom Resize Handle in the bottom-right corner -->
-    <div id="resize-handle" class="no-drag"></div>
+    <div id="bulletin-container" class="no-drag"></div>
+    
+    <div id="drag-handle" title="Drag Window">✥ Drag</div>
+    <div id="resize-handle" title="Resize Window"></div>
+    
     <script src="js/display.js"></script>
 </body>
 </html>

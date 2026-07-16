@@ -1,60 +1,64 @@
+let lastSeq = 0;
+
 window.addEventListener('pywebviewready', () => {
-    document.getElementById('meeting-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    setInterval(updateTime, 1000);
-    setInterval(pollAbsences, 500);
-    setupResizeHandler();
+    // 1. Polling for returning people
+    setInterval(pollReturns, 500);
+    
+    // 2. Enable manual drag and resize across multiple monitors
     setupDragHandler();
+    setupResizeHandler();
 });
 
-function setupResizeHandler() {
-    const handle = document.getElementById('resize-handle');
-    if (!handle) return;
-
-    let isResizing = false;
-    let startWidth = 0;
-    let startHeight = 0;
-    let startX = 0;
-    let startY = 0;
-
-    handle.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        startWidth = window.innerWidth;
-        startHeight = window.innerHeight;
-        startX = e.screenX;
-        startY = e.screenY;
-        e.preventDefault();
-        e.stopPropagation();
-    });
-
-    window.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        const deltaX = e.screenX - startX;
-        const deltaY = e.screenY - startY;
-        const newWidth = Math.max(200, startWidth + deltaX);
-        const newHeight = Math.max(150, startHeight + deltaY);
-
-        if (window.pywebview && window.pywebview.api && window.pywebview.api.resize_display) {
-            window.pywebview.api.resize_display(newWidth, newHeight);
+async function pollReturns() {
+    if (!window.pywebview || !window.pywebview.api) return;
+    
+    try {
+        const newReturns = await window.pywebview.api.get_new_returns(lastSeq);
+        
+        if (newReturns && newReturns.length > 0) {
+            newReturns.forEach(ret => {
+                // Safely grab duration_mins from the Python backend, fallback to "xx" if missing
+                const minutes = ret.duration_mins || "xx";
+                spawnBulletin(ret.name, minutes);
+                
+                // Update the sequence number so we don't repeat notifications
+                if (ret.seq > lastSeq) lastSeq = ret.seq;
+            });
         }
-    });
+    } catch (e) {
+        console.error("Polling error:", e);
+    }
+}
 
-    window.addEventListener('mouseup', () => {
-        isResizing = false;
-    });
+function spawnBulletin(name, minutes) {
+    const container = document.getElementById('bulletin-container');
+    const bulletin = document.createElement('div');
+    
+    bulletin.className = 'bulletin';
+    bulletin.textContent = `${name}离席了(${minutes}分钟)`; 
+    
+    // Add slight random vertical offset if multiple people return at once
+    const randomOffset = (Math.random() - 0.5) * 20;
+    bulletin.style.marginTop = `${randomOffset}px`;
+
+    container.appendChild(bulletin);
+
+    // Clean up the DOM element precisely at 5 seconds to match the CSS animation
+    setTimeout(() => {
+        if (bulletin.parentNode) {
+            bulletin.parentNode.removeChild(bulletin);
+        }
+    }, 10000);
 }
 
 function setupDragHandler() {
-    const dragBar = document.getElementById('drag-bar');
+    const dragBar = document.getElementById('drag-handle');
     if (!dragBar) return;
 
     let isDragging = false;
-    let lastX = 0;
-    let lastY = 0;
 
     dragBar.addEventListener('mousedown', (e) => {
         isDragging = true;
-        lastX = e.screenX;
-        lastY = e.screenY;
         document.body.style.cursor = 'move';
         e.preventDefault();
         e.stopPropagation();
@@ -62,10 +66,13 @@ function setupDragHandler() {
 
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        const dx = e.screenX - lastX;
-        const dy = e.screenY - lastY;
-        lastX = e.screenX;
-        lastY = e.screenY;
+        
+        // movementX/Y tracks raw mouse movement, preventing multi-monitor coordinate jumps
+        const dx = e.movementX;
+        const dy = e.movementY;
+        
+        if (dx === 0 && dy === 0) return;
+        
         if (window.pywebview && window.pywebview.api && window.pywebview.api.move_window) {
             window.pywebview.api.move_window(dx, dy).catch(() => { });
         }
@@ -77,37 +84,36 @@ function setupDragHandler() {
     });
 }
 
-function updateTime() {
-    document.getElementById('current-time').textContent = new Date().toLocaleTimeString();
-}
+function setupResizeHandler() {
+    const resizeHandle = document.getElementById('resize-handle');
+    if (!resizeHandle) return;
 
-async function pollAbsences() {
-    const absences = await pywebview.api.get_active_absences();
-    renderAbsences(absences);
-}
+    let isResizing = false;
+    let currentWidth = 0, currentHeight = 0;
 
-let lastRender = '';
+    resizeHandle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        currentWidth = window.innerWidth;
+        currentHeight = window.innerHeight;
+        document.body.style.cursor = 'se-resize';
+        e.preventDefault();
+        e.stopPropagation();
+    });
 
-function renderAbsences(absences) {
-    const list = document.getElementById('absences-list');
-    if (absences.length === 0) {
-        const html = '<p class="all-present">✓ Everyone is present</p>';
-        if (lastRender !== html) { list.innerHTML = html; lastRender = html; }
-        return;
-    }
-    const now = new Date();
-    const html = absences.map(a => {
-        const parts = (a.start_time || '').split(':');
-        if (parts.length < 3) return '';
-        const [h, m, s] = parts.map(Number);
-        if ([h, m, s].some(isNaN)) return '';
-        const start = new Date(); start.setHours(h, m, s);
-        const diffMins = Math.max(0, Math.floor((now - start) / 60000));
-        return `<div class="absence-item">
-            <span class="bullet">●</span>
-            <span class="name">${a.name}</span>
-            <span class="duration">— Away (${diffMins} min)</span>
-        </div>`;
-    }).filter(Boolean).join('');
-    if (html !== lastRender) { list.innerHTML = html; lastRender = html; }
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        
+        // Use movementX/Y for safe cross-monitor resizing
+        currentWidth += e.movementX;
+        currentHeight += e.movementY;
+        
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.resize_display) {
+            window.pywebview.api.resize_display(currentWidth, currentHeight).catch(() => { });
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isResizing = false;
+        document.body.style.cursor = '';
+    });
 }
