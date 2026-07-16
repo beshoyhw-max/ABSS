@@ -38,17 +38,17 @@ class AbsenceAPI:
         self._load_config()
         self._ensure_exports_dir()
         self._ensure_today_excel()
-        self.control_window = None
-        self.display_window = None
+        self._control_window = None
+        self._display_window = None
 
     def set_windows(self, control, display):
-        self.control_window = control
-        self.display_window = display
+        self._control_window = control
+        self._display_window = display
 
     def resize_display(self, width, height):
-        if self.display_window:
+        if self._display_window:
             try:
-                self.display_window.resize(int(width), int(height))
+                self._display_window.resize(int(width), int(height))
             except Exception as e:
                 print(f"Error resizing display window: {e}")
 
@@ -178,13 +178,13 @@ class AbsenceAPI:
         self._save_config()
 
     def import_presets_excel(self) -> list[str]:
-        if not self.control_window:
+        if not self._control_window:
             return self.get_preset_names()
 
         file_types = ('Excel Files (*.xlsx)', 'All files (*.*)')
         try:
             # We use webview.FileDialog.OPEN which is the correct enum in pywebview
-            result = self.control_window.create_file_dialog(
+            result = self._control_window.create_file_dialog(
                 dialog_type=webview.OPEN_DIALOG,
                 allow_multiple=False,
                 file_types=file_types
@@ -225,12 +225,12 @@ class AbsenceAPI:
             return self.get_preset_names()
 
     def download_preset_template(self) -> bool:
-        if not self.control_window:
+        if not self._control_window:
             return False
 
         file_types = ('Excel Files (*.xlsx)', 'All files (*.*)')
         try:
-            result = self.control_window.create_file_dialog(
+            result = self._control_window.create_file_dialog(
                 dialog_type=webview.SAVE_DIALOG,
                 save_filename='presets_template.xlsx',
                 file_types=file_types
