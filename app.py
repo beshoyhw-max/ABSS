@@ -38,6 +38,19 @@ class AbsenceAPI:
         self._load_config()
         self._ensure_exports_dir()
         self._ensure_today_excel()
+        self.control_window = None
+        self.display_window = None
+
+    def set_windows(self, control, display):
+        self.control_window = control
+        self.display_window = display
+
+    def resize_display(self, width, height):
+        if self.display_window:
+            try:
+                self.display_window.resize(int(width), int(height))
+            except Exception as e:
+                print(f"Error resizing display window: {e}")
 
     def _load_config(self) -> None:
         if self.config_path.exists():
@@ -164,13 +177,87 @@ class AbsenceAPI:
         self.preset_names = list(names)
         self._save_config()
 
+    def import_presets_excel(self) -> list[str]:
+        if not self.control_window:
+            return self.get_preset_names()
+
+        file_types = ('Excel Files (*.xlsx)', 'All files (*.*)')
+        try:
+            # We use webview.FileDialog.OPEN which is the correct enum in pywebview
+            result = self.control_window.create_file_dialog(
+                dialog_type=webview.OPEN_DIALOG,
+                allow_multiple=False,
+                file_types=file_types
+            )
+            if not result or len(result) == 0:
+                return self.get_preset_names()
+
+            filepath = Path(result[0])
+            if not filepath.exists():
+                return self.get_preset_names()
+
+            wb = openpyxl.load_workbook(filepath, data_only=True)
+            ws = wb.active
+            new_presets = []
+
+            # Read non-empty rows from column A (column index 1), ignoring header if any
+            first_row = True
+            for row in ws.iter_rows(values_only=True):
+                if first_row:
+                    first_row = False
+                    # We can check if it's a header like "Name" or "Names". If not, let's treat it as a name.
+                    if row and str(row[0]).strip().lower() in ("name", "names"):
+                        continue
+                if row and row[0]:
+                    name_str = str(row[0]).strip()
+                    if name_str and name_str not in new_presets:
+                        new_presets.append(name_str)
+
+            if new_presets:
+                # Overwrite
+                self.preset_names = new_presets
+                self._save_config()
+
+            return self.get_preset_names()
+
+        except Exception as e:
+            print(f"Error importing excel: {e}")
+            return self.get_preset_names()
+
+    def download_preset_template(self) -> bool:
+        if not self.control_window:
+            return False
+
+        file_types = ('Excel Files (*.xlsx)', 'All files (*.*)')
+        try:
+            result = self.control_window.create_file_dialog(
+                dialog_type=webview.SAVE_DIALOG,
+                save_filename='presets_template.xlsx',
+                file_types=file_types
+            )
+            if not result:
+                return False
+
+            filepath = Path(result) if isinstance(result, str) else Path(result[0])
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Presets"
+            ws.append(["Name"])
+            ws.append(["Alice"])
+            ws.append(["Bob"])
+            ws.append(["Charlie"])
+            wb.save(filepath)
+            return True
+        except Exception as e:
+            print(f"Error downloading template: {e}")
+            return False
+
 
 def main():
     api = AbsenceAPI()
-    windows = [
-        webview.create_window("Control", "ui/control.html", width=500, height=700, resizable=True, js_api=api),
-        webview.create_window("Display", "ui/display.html", width=600, height=400, frameless=True, resizable=True, js_api=api),
-    ]
+    control_window = webview.create_window("Control", "ui/control.html", width=500, height=700, resizable=True, js_api=api)
+    display_window = webview.create_window("Display", "ui/display.html", width=600, height=400, frameless=True, resizable=True, js_api=api)
+    api.set_windows(control_window, display_window)
     webview.start(debug=True, http_server=True)
 
 
