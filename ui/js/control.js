@@ -1,164 +1,249 @@
-let presetNames = [];
-let activeAbsences = [];
+/**
+ * control.js — Settings panel & PyWebView API calls
+ */
 
-window.addEventListener('pywebviewready', () => {
-    loadInit();
-});
+(function () {
+    const gearBtn = document.getElementById('gear-btn');
+    const panel = document.getElementById('control-panel');
+    const startBtn = document.getElementById('btn-start');
+    const stopBtn = document.getElementById('btn-stop');
+    const nextBtn = document.getElementById('btn-next');
+    const quickStopBtn = document.getElementById('btn-quick-stop');
+    const exportBtn = document.getElementById('btn-export');
+    const historySection = document.getElementById('history-section');
+    const historyList = document.getElementById('history-list');
 
-async function loadInit() {
-    const names = await pywebview.api.get_preset_names();
-    presetNames = names;
-    renderPresets();
-    document.getElementById('meeting-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('name-input').focus();
-    setupExcelActions();
-    setupAbsentSearch();
-    setInterval(pollAbsences, 500);
-}
+    const inputSpeaker = document.getElementById('input-speaker');
+    const inputMinutes = document.getElementById('input-minutes');
+    const inputSeconds = document.getElementById('input-seconds');
+    const inputRate = document.getElementById('input-rate');
+    const inputInterval = document.getElementById('input-interval');
 
-function setupAbsentSearch() {
-    const sInput = document.getElementById('absent-search');
-    if (sInput) {
-        sInput.addEventListener('input', () => {
-            renderAbsences();
-        });
-    }
-}
+    let panelOpen = false;
 
-function setupExcelActions() {
-    const importBtn = document.getElementById('import-excel-btn');
-    const downloadBtn = document.getElementById('download-template-btn');
-    
-    if (importBtn) {
-        importBtn.addEventListener('click', async () => {
-            const updated = await pywebview.api.import_presets_excel();
-            presetNames = updated;
-            renderPresets();
-        });
-    }
-    
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', async () => {
-            await pywebview.api.download_preset_template();
-        });
-    }
-}
+    /* ═══════ COMPACT SIZES ═══════ */
+    const COMPACT_W = 500;
+    const COMPACT_H = 120;
+    const PANEL_W = 500;
+    const MIN_PANEL_H = 340;
+    const MAX_PANEL_H = 720;
 
-async function pollAbsences() {
-    const absences = await pywebview.api.get_active_absences();
-    activeAbsences = absences;
-    renderAbsences();
-    document.getElementById('absent-badge').textContent = absences.length + ' absent';
-}
+    /* ═══════ TOGGLE PANEL ═══════ */
 
-function renderAbsences() {
-    const list = document.getElementById('absences-list');
-    if (activeAbsences.length === 0) {
-        list.innerHTML = '<p class="empty-msg">No one is absent</p>';
-        return;
-    }
-    
-    const searchVal = (document.getElementById('absent-search')?.value || '').trim().toLowerCase();
-    
-    // Filter by search text
-    const filtered = activeAbsences.filter(a => a.name.toLowerCase().includes(searchVal));
-    
-    if (filtered.length === 0) {
-        list.innerHTML = '<p class="empty-msg">No matching absent people</p>';
-        return;
-    }
-    
-    list.innerHTML = filtered.map(a => `
-        <div class="absence-row">
-            <div class="absence-info">
-                <div class="name">${a.name}</div>
-                <div class="start">Away since ${a.start_time}</div>
-                <div class="elapsed" data-start="${a.start_time}">Away (${Math.floor(a.elapsed_mins)} min)</div>
-            </div>
-            <button class="mark-back-btn" onclick="markBack('${a.id}')">Mark Back</button>
-        </div>
-    `).join('');
-}
+    gearBtn.addEventListener('click', () => {
+        panelOpen = !panelOpen;
+        panel.classList.toggle('hidden', !panelOpen);
+        gearBtn.classList.toggle('active', panelOpen);
 
-async function markBack(id) {
-    await pywebview.api.mark_return(id);
-}
-
-function fuzzyMatch(text, query) {
-    text = text.toLowerCase();
-    query = query.toLowerCase();
-    let textIdx = 0;
-    let queryIdx = 0;
-    while (textIdx < text.length && queryIdx < query.length) {
-        if (text[textIdx] === query[queryIdx]) {
-            queryIdx++;
+        // Remove idle dimming when panel is open
+        const timer = document.getElementById('floating-timer');
+        if (panelOpen) {
+            timer.classList.remove('idle');
         }
-        textIdx++;
+
+        if (panelOpen) {
+            refreshHistory().then(() => resizeForPanel(true));
+        } else {
+            resizeForPanel(false);
+        }
+    });
+
+    /* Right-click also opens panel */
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (!panelOpen) {
+            panelOpen = true;
+            panel.classList.remove('hidden');
+            gearBtn.classList.add('active');
+
+            const timer = document.getElementById('floating-timer');
+            timer.classList.remove('idle');
+
+            refreshHistory().then(() => resizeForPanel(true));
+        }
+    });
+
+    /* ═══════ ACTIONS ═══════ */
+
+    startBtn.addEventListener('click', async () => {
+        const speaker = inputSpeaker.value.trim() || '发言人';
+        const minutes = parseFloat(inputMinutes.value) || 0;
+        const seconds = parseFloat(inputSeconds.value) || 0;
+        const rateAmt = parseFloat(inputRate.value) || 5;
+        const rateInt = parseInt(inputInterval.value) || 5;
+
+        if (minutes === 0 && seconds === 0) {
+            inputMinutes.style.borderColor = 'var(--crimson)';
+            setTimeout(() => { inputMinutes.style.borderColor = ''; }, 1500);
+            return;
+        }
+
+        try {
+            await pywebview.api.configure(speaker, minutes, seconds, rateAmt, rateInt);
+            await pywebview.api.start_timer();
+        } catch (e) {
+            console.error('Start failed:', e);
+        }
+
+        // Collapse panel on start
+        panelOpen = false;
+        panel.classList.add('hidden');
+        gearBtn.classList.remove('active');
+        resizeForPanel(false);
+    });
+
+    stopBtn.addEventListener('click', async () => {
+        try {
+            await pywebview.api.stop_timer();
+        } catch (e) {
+            console.error('Stop failed:', e);
+        }
+    });
+
+    /* Quick-stop button (hover-revealed) */
+    quickStopBtn.addEventListener('click', async () => {
+        try {
+            await pywebview.api.stop_timer();
+        } catch (e) {
+            console.error('Quick stop failed:', e);
+        }
+    });
+
+    nextBtn.addEventListener('click', async () => {
+        try {
+            await pywebview.api.next_speaker();
+        } catch (e) {
+            console.error('Next failed:', e);
+        }
+        await refreshHistory();
+        if (panelOpen) resizeForPanel(true);
+    });
+
+    /* ═══════ HISTORY ═══════ */
+
+    async function refreshHistory() {
+        try {
+            const history = await pywebview.api.get_history();
+            if (!history || history.length === 0) {
+                historySection.classList.add('hidden');
+                return;
+            }
+            historySection.classList.remove('hidden');
+            historyList.innerHTML = '';
+            for (const h of history) {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+          <span class="hi-name">${escapeHtml(h.name)}</span>
+          <span class="hi-time">${h.allocated} → ${h.actual}</span>
+          <span class="hi-cost">￥${h.cost.toFixed(2)}</span>
+        `;
+                historyList.appendChild(div);
+            }
+        } catch (e) { /* pywebview not ready */ }
     }
-    return queryIdx === query.length;
-}
 
-document.getElementById('name-input').addEventListener('input', (e) => {
-    const val = e.target.value.trim();
-    const list = document.getElementById('autocomplete-list');
-    if (!val) { list.style.display = 'none'; return; }
-    
-    // Fuzzy search through presets
-    const matches = presetNames.filter(n => fuzzyMatch(n, val));
-    if (matches.length) {
-        list.innerHTML = matches.map(m => `<li onclick="selectPreset('${m}')">${m}</li>`).join('');
-        list.style.display = 'block';
-    } else {
-        list.style.display = 'none';
+    /* ═══════ CSV EXPORT ═══════ */
+
+    exportBtn.addEventListener('click', async () => {
+        try {
+            const csv = await pywebview.api.export_csv();
+            if (!csv) return;
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `meeting-timer-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('Export failed:', e);
+        }
+    });
+
+    /* ═══════ KEYBOARD SHORTCUTS ═══════ */
+
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.code === 'Space') {
+            e.preventDefault();
+            if (!startBtn.disabled) startBtn.click();
+            else if (!stopBtn.disabled) stopBtn.click();
+        }
+        if (e.code === 'KeyN' && !nextBtn.disabled) nextBtn.click();
+        if (e.code === 'Escape') {
+            panelOpen = false;
+            panel.classList.add('hidden');
+            gearBtn.classList.remove('active');
+            resizeForPanel(false);
+        }
+    });
+
+    /* ═══════ DRAG SUPPORT (fallback) ═══════ */
+
+    const dragBar = document.getElementById('drag-bar');
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    dragBar.addEventListener('mousedown', (e) => {
+        if (e.target === gearBtn || e.target === quickStopBtn) return;
+        isDragging = true;
+        dragOffsetX = e.screenX;
+        dragOffsetY = e.screenY;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.screenX - dragOffsetX;
+        const dy = e.screenY - dragOffsetY;
+        dragOffsetX = e.screenX;
+        dragOffsetY = e.screenY;
+
+        try {
+            if (window.pywebview && pywebview.api) {
+                // CSS -webkit-app-region: drag handles this
+            }
+        } catch (e) { /* ignore */ }
+    });
+
+    document.addEventListener('mouseup', () => { isDragging = false; });
+
+    /* ═══════ UTIL ═══════ */
+
+    function resizeForPanel(open) {
+        if (!open) {
+            try { pywebview.api.set_size(COMPACT_W, COMPACT_H); } catch (e) { }
+            return;
+        }
+        // Base height covers: drag-bar + timer-display + full form + buttons
+        // Increased to 420 to ensure buttons are never cut off
+        let h = 420;
+
+        // Grow dynamically when history items are present
+        const historySection = document.getElementById('history-section');
+        if (historySection && !historySection.classList.contains('hidden')) {
+            const items = document.querySelectorAll('#history-list .history-item').length;
+            if (items > 0) {
+                // Header (50) + items (28px each) + padding (20)
+                h += 70 + Math.min(items * 28, 240);
+            }
+        }
+
+        h = Math.min(h, MAX_PANEL_H);
+
+        // Call set_size with a small delay to ensure UI threads are clear
+        // But also call immediately for perceived responsiveness
+        try { pywebview.api.set_size(PANEL_W, h); } catch (e) { }
+
+        setTimeout(() => {
+            try { pywebview.api.set_size(PANEL_W, h); } catch (e) { }
+        }, 50);
     }
-});
 
-document.getElementById('name-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') addAbsence();
-});
-
-document.getElementById('mark-away-btn').addEventListener('click', addAbsence);
-
-function addAbsence() {
-    const name = document.getElementById('name-input').value.trim();
-    if (!name) return;
-    pywebview.api.add_absence(name);
-    document.getElementById('name-input').value = '';
-    document.getElementById('autocomplete-list').style.display = 'none';
-    document.getElementById('name-input').focus();
-}
-
-function selectPreset(name) {
-    document.getElementById('name-input').value = name;
-    document.getElementById('autocomplete-list').style.display = 'none';
-    addAbsence();
-}
-
-function renderPresets() {
-    const list = document.getElementById('preset-list');
-    if (presetNames.length === 0) {
-        list.innerHTML = '<p class="empty-msg">No preset names configured</p>';
-        return;
+    function escapeHtml(text) {
+        const el = document.createElement('span');
+        el.textContent = text;
+        return el.innerHTML;
     }
-    list.innerHTML = presetNames.map(n => `
-        <li class="preset-item">
-            <span class="preset-name" onclick="selectPreset('${n}')" title="Mark ${n} as Away">${n}</span>
-            <span class="remove" onclick="removePreset('${n}')" title="Delete preset">×</span>
-        </li>
-    `).join('');
-}
-
-document.getElementById('add-preset-btn').addEventListener('click', () => {
-    const val = document.getElementById('preset-input').value.trim();
-    if (!val || presetNames.includes(val)) return;
-    presetNames.push(val);
-    pywebview.api.save_preset_names(presetNames);
-    document.getElementById('preset-input').value = '';
-    renderPresets();
-});
-
-function removePreset(name) {
-    presetNames = presetNames.filter(n => n !== name);
-    pywebview.api.save_preset_names(presetNames);
-    renderPresets();
-}
+})();
