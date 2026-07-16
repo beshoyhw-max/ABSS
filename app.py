@@ -195,6 +195,7 @@ class AbsenceAPI:
                 "id": absence.id,
                 "name": absence.name,
                 "ts": now_ts,
+                "duration_mins": absence.duration_mins,
             })
             cutoff = now_ts - 30
             self._recent_returns = [e for e in self._recent_returns if e["ts"] > cutoff]
