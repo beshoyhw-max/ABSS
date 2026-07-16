@@ -1,8 +1,8 @@
 let lastSeq = 0;
 
 window.addEventListener('pywebviewready', () => {
-    // 1. Polling for returning people
-    setInterval(pollReturns, 500);
+    // 1. Polling for returning people every 3 seconds (3000ms)
+    setInterval(pollReturns, 3000); 
     
     // 2. Enable manual drag and resize across multiple monitors
     setupDragHandler();

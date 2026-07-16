@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absence Tracker — Control</title>
+    <link rel="stylesheet" href="css/control.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Absence Tracker</h1>
+        <span id="meeting-date"></span>
+        <span id="absent-badge" class="badge">0 absent</span>
+    </div>
+
+    <div class="add-section">
+        <input type="text" id="name-input" placeholder="Enter name..." autocomplete="off">
+        <ul id="autocomplete-list" class="autocomplete"></ul>
+        <button id="mark-away-btn">Mark Away</button>
+    </div>
+
+    <div class="absences-section">
+        <div class="absences-header">
+            <h3>Active Absences</h3>
+            <input type="text" id="absent-search" placeholder="Search absent people to mark back..." autocomplete="off">
+        </div>
+        <div class="absences-list" id="absences-list">
+            <p class="empty-msg">No one is absent</p>
+        </div>
+    </div>
+
+    <div class="presets-section">
+        <div class="preset-header">
+            <h3>Preset Names</h3>
+            <div class="preset-actions">
+                <button id="download-template-btn" title="Download Excel template">Download Template</button>
+                <button id="import-excel-btn" title="Import from Excel file">Import Excel</button>
+            </div>
+        </div>
+        <div class="preset-add">
+            <input type="text" id="preset-input" placeholder="Add preset name...">
+            <button id="add-preset-btn">Add</button>
+        </div>
+        <ul id="preset-list" class="preset-list"></ul>
+    </div>
+
+    <script src="js/control.js"></script>
+</body>
+</html>
