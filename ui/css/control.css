@@ -1,0 +1,43 @@
+:root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --accent: #0f3460;
+    --highlight: #e94560;
+    --text: #eaeaea;
+    --muted: #888;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
+
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.header h1 { font-size: 1.2rem; }
+.badge { background: var(--highlight); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+
+.add-section { position: relative; display: flex; gap: 8px; margin-bottom: 20px; }
+#name-input { flex: 1; padding: 10px; font-size: 1rem; border: 2px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--text); }
+#mark-away-btn { padding: 10px 20px; font-size: 1rem; background: var(--highlight); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+#mark-away-btn:hover { opacity: 0.9; }
+
+.autocomplete { position: absolute; top: 44px; left: 0; right: 90px; background: var(--surface); border: 1px solid var(--accent); border-radius: 0 0 8px 8px; list-style: none; z-index: 100; display: none; }
+.autocomplete li { padding: 8px 12px; cursor: pointer; }
+.autocomplete li:hover { background: var(--accent); }
+
+.absences-list { background: var(--surface); border-radius: 12px; padding: 12px; min-height: 120px; margin-bottom: 20px; }
+.empty-msg { color: var(--muted); text-align: center; padding: 20px; }
+
+.absence-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--accent); }
+.absence-row:last-child { border-bottom: none; }
+.absence-info .name { font-weight: bold; font-size: 1rem; }
+.absence-info .start { color: var(--muted); font-size: 0.85rem; }
+.absence-info .elapsed { color: var(--highlight); font-size: 0.95rem; }
+.mark-back-btn { padding: 6px 14px; background: #2ecc71; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.mark-back-btn:hover { opacity: 0.85; }
+
+.presets-section { background: var(--surface); border-radius: 12px; padding: 12px; }
+.presets-section h3 { font-size: 0.95rem; color: var(--muted); margin-bottom: 10px; }
+.preset-add { display: flex; gap: 8px; margin-bottom: 10px; }
+#preset-input { flex: 1; padding: 6px; font-size: 0.9rem; border: 1px solid var(--accent); border-radius: 6px; background: var(--bg); color: var(--text); }
+#add-preset-btn { padding: 6px 12px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; }
+.preset-list { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.preset-list li { background: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }
+.preset-list li .remove { cursor: pointer; color: var(--highlight); font-weight: bold; }
