@@ -19,12 +19,24 @@
         <button id="mark-away-btn">Mark Away</button>
     </div>
 
-    <div class="absences-list" id="absences-list">
-        <p class="empty-msg">No one is absent</p>
+    <div class="absences-section">
+        <div class="absences-header">
+            <h3>Active Absences</h3>
+            <input type="text" id="absent-search" placeholder="Search absent people to mark back..." autocomplete="off">
+        </div>
+        <div class="absences-list" id="absences-list">
+            <p class="empty-msg">No one is absent</p>
+        </div>
     </div>
 
     <div class="presets-section">
-        <h3>Preset Names</h3>
+        <div class="preset-header">
+            <h3>Preset Names</h3>
+            <div class="preset-actions">
+                <button id="download-template-btn" title="Download Excel template">Download Template</button>
+                <button id="import-excel-btn" title="Import from Excel file">Import Excel</button>
+            </div>
+        </div>
         <div class="preset-add">
             <input type="text" id="preset-input" placeholder="Add preset name...">
             <button id="add-preset-btn">Add</button>
