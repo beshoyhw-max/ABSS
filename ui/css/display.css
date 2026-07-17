@@ -73,13 +73,15 @@ body:hover #resize-handle {
     font-size: 1.6rem;
     font-weight: 600;
     color: white;
-    
-    /* Increased to 6 seconds for a smoother, slower float */
-    animation: floatLeft 10s linear forwards;
+
+    /* `both` (instead of `forwards`) makes the element hold the 0% keyframe
+       state (invisible, parked at left:100%) during any animation-delay,
+       so staggered bulletins stay hidden until their slot starts. */
+    animation: floatLeft 10s linear both;
 }
 
 @keyframes floatLeft {
-    0% { 
+    0% {
         left: 100%; /* Start exactly at the right edge */
         transform: translate(0, -50%);
         opacity: 0; /* Start invisible */
@@ -90,7 +92,7 @@ body:hover #resize-handle {
     90% {
         opacity: 1; /* Stay solid until it gets near the left edge */
     }
-    100% { 
+    100% {
         left: 0; /* Go to the left edge */
         transform: translate(-100%, -50%); /* Pull itself completely off-screen */
         opacity: 0; /* Fade out completely as it exits */
