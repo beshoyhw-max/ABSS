@@ -1,1 +1,1 @@
-# ABSS
+ok now we need to do something else , we need to keep the a more visible background avaliable until i finish the placement and resizing then there should be a hide button when clicked it goes to the transparent background and when hovered it goes little darker and shows back the options , also i want the drag to be on the whole window not just the drag button 
