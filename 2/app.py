@@ -9,7 +9,7 @@ import webview
 
 # ========== CONFIGURATION ==========
 # Change this to the IP address of Laptop A
-CONTROL_IP = "192.168.1.15" 
+CONTROL_IP = "10.216.90.182" 
 # ===================================
 
 class DisplayAPI:
