@@ -1,98 +1,93 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background: transparent !important;
-    height: 100vh;
+/* ==========================================
+   BASE WINDOW SETTINGS
+   ========================================== */
+   html, body {
+    margin: 0;
+    padding: 0;
     width: 100vw;
-    overflow: hidden;
-    position: relative;
-    transition: background 0.2s ease, border 0.2s ease;
-    border: 1px solid transparent;
+    height: 100vh;
+    
+    /* CRITICAL: Keeps the window entirely transparent */
+    background-color: transparent !important; 
+    
+    /* CRITICAL: Prevents scrollbars from appearing when text slides up */
+    overflow: hidden; 
+    
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+    /* Allows you to click "through" the invisible window to your desktop behind it */
+    pointer-events: none; 
 }
 
-/* HOVER MODE: Shows exactly where the window is so you can interact with it */
-body:hover {
-    background: rgba(0, 0, 0, 0.05) !important; /* Very faint dark tint */
-    border: 1px dashed rgba(0, 0, 0, 0.2);
-}
-
-.no-drag {
-    -webkit-app-region: no-drag;
-}
-
-/* Top-Left Drag Handle */
-#drag-handle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    font-size: 12px;
-    padding: 4px 10px;
-    border-bottom-right-radius: 8px;
-    cursor: move;
-    user-select: none;
-    z-index: 100;
-    opacity: 0; /* Hidden by default */
-    transition: opacity 0.2s ease;
-}
-
-/* Bottom-Right Resize Handle */
-#resize-handle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    background: rgba(0, 0, 0, 0.6);
-    cursor: se-resize;
-    z-index: 100;
-    clip-path: polygon(100% 0, 100% 100%, 0 100%); /* Makes it a triangle */
-    opacity: 0; /* Hidden by default */
-    transition: opacity 0.2s ease;
-}
-
-/* Reveal handles when hovering over the window */
-body:hover #drag-handle,
-body:hover #resize-handle {
-    opacity: 1;
-}
-
-#bulletin-container {
+/* ==========================================
+   DISPLAY CONTAINER
+   ========================================== */
+#display-container {
     position: relative;
     width: 100%;
     height: 100%;
-    pointer-events: none;
 }
 
-.bulletin {
+/* ==========================================
+   FLOATING TEXT ANIMATION
+   ========================================== */
+.floating-text {
     position: absolute;
-    top: 50%;
-    white-space: nowrap;
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: white;
+    bottom: 20px;
+    left: 30px;
     
-    /* Increased to 6 seconds for a smoother, slower float */
-    animation: floatLeft 10s linear forwards;
+    /* Typography */
+    font-size: 36px;
+    font-weight: 800;
+    color: #4ade80; /* Bright, pleasant green */
+    letter-spacing: 1px;
+    white-space: nowrap;
+    
+    /* Heavy outline and shadow so it's readable over ANY background (white or black) */
+    text-shadow: 
+        2px 2px 0 #000, 
+        -2px -2px 0 #000, 
+        2px -2px 0 #000, 
+        -2px 2px 0 #000,
+        0px 8px 15px rgba(0, 0, 0, 0.6);
+        
+    /* Matches the 5000ms timeout in your display.js */
+    animation: floatUpAndFade 5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-@keyframes floatLeft {
-    0% { 
-        left: 100%; /* Start exactly at the right edge */
-        transform: translate(0, -50%);
-        opacity: 0; /* Start invisible */
+/* 
+  The Animation Timeline:
+  0%  - Starts hidden below its starting point
+  15% - Snaps up and fades in fully
+  80% - Slowly drifts upwards while fully visible
+  100% - Fades out completely and floats slightly higher
+*/
+@keyframes floatUpAndFade {
+    0% {
+        transform: translateY(50px);
+        opacity: 0;
     }
-    5% {
-        opacity: 1; /* Fade in quickly as it enters */
+    15% {
+        transform: translateY(0);
+        opacity: 1;
     }
-    90% {
-        opacity: 1; /* Stay solid until it gets near the left edge */
+    80% {
+        transform: translateY(-30px);
+        opacity: 1;
     }
-    100% { 
-        left: 0; /* Go to the left edge */
-        transform: translate(-100%, -50%); /* Pull itself completely off-screen */
-        opacity: 0; /* Fade out completely as it exits */
+    100% {
+        transform: translateY(-60px);
+        opacity: 0;
     }
+}
+
+/* ==========================================
+   DRAG HANDLE OVERRIDE
+   ========================================== */
+/* We set pointer-events to 'none' on the body, so we must re-enable it for the drag handle */
+#drag-handle {
+    pointer-events: auto !important;
+    border-radius: 0 0 8px 0;
+    font-size: 14px;
+    font-family: monospace;
 }
